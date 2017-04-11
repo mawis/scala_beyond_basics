@@ -12,8 +12,8 @@ class AdvancedPatternMatchingSpec extends FunSpec with Matchers {
 
   describe("Simple Pattern Matches") {
     it("can be as simple as an assignment") {
-      val x: Int = 40
-      x should be(40)
+      val x: Int = 42
+      x should be(42)
     }
 
     it("can also be more meaningful as something like a tuple") {
@@ -25,7 +25,10 @@ class AdvancedPatternMatchingSpec extends FunSpec with Matchers {
     it(
       """has the ability to have a value name and an @
         |  to not only capture the individual items but the whole item""".stripMargin) {
-      pending
+      val t@(x,y) = (100, "Foo")
+      x should be (100)
+      y should be ("Foo")
+      t should be (100, "Foo")
     }
 
     it("can be used with an Optional, and often is used as such, let's do a Some") {
@@ -67,7 +70,7 @@ class AdvancedPatternMatchingSpec extends FunSpec with Matchers {
 
     it( """can also match using a variant form since Nil represents an empty list""") {
       val a@Nil = List()
-      a should be('empty)
+      a should be(List())
     }
 
     it( """can also match a single item using the :: form""") {
@@ -83,7 +86,10 @@ class AdvancedPatternMatchingSpec extends FunSpec with Matchers {
     it(
       """can do a list where you care about an *exact* number of items,
         |  let's try two using :: form""".stripMargin) {
-      pending
+       val fst :: snd :: thd :: Nil = List(1,4, 10)
+       fst should be (1)
+       snd should be (4)
+       thd should be (10)
     }
 
     it(
@@ -124,7 +130,10 @@ class AdvancedPatternMatchingSpec extends FunSpec with Matchers {
     it(
       """can do a list where you want to capture any number of items and
         |  keep the remainder in an extra list using the List() form""".stripMargin) {
-      pending
+      val List(f, s, xs@_*) = (1 to 5).toList
+      f should be(1)
+      s should be(2)
+      xs should be(List(3, 4, 5))
     }
 
     it(
@@ -166,12 +175,11 @@ class AdvancedPatternMatchingSpec extends FunSpec with Matchers {
       all should be(List(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
     }
 
-
     it(
       """will always throw a Match Error if something doesn't match, for example here
         |  is an attempted match with a tuple""".stripMargin) {
       val z: Any = (1, 4.0, "Foo")
-      a[MatchError] should be thrownBy {
+      a[scala.MatchError] should be thrownBy {
         val (x, y) = z
       }
     }
@@ -192,30 +200,109 @@ class AdvancedPatternMatchingSpec extends FunSpec with Matchers {
     }
 
     it( """Lets do up a replicate method""".stripMargin) {
-      pending
+      def replicate[A](count:Int, item:A):List[A] = {
+        count match {
+          case 0 => Nil
+          case n => item :: replicate(n - 1, item)
+        }
+      }
+
+      replicate(0, "Foo") should be (List[String]())
+      replicate(1, 5.0) should be (List(5.0))
+      replicate(3, 5) should be (List(5, 5, 5))
+      replicate(5, "Foo") should be (List("Foo", "Foo", "Foo", "Foo", "Foo"))
+      replicate(2, "Foo") should be (List("Foo", "Foo"))
     }
 
     it( """will create a replicate in a tail recursive manner""".stripMargin) {
-      pending
+      def replicate[A](count:Int, item:A):List[A] = {
+        @tailrec
+        def repl(count:Int, acc:List[A]):List[A] = {
+          count match {
+            case 0 => acc
+            case n => repl(n - 1, item :: acc)
+          }
+        }
+        repl(count, Nil)
+      }
+
+      replicate(0, "Foo") should be (List[String]())
+      replicate(1, 5.0) should be (List(5.0))
+      replicate(3, 5) should be (List(5, 5, 5))
+      replicate(5, "Foo") should be (List("Foo", "Foo", "Foo", "Foo", "Foo"))
+      replicate(2, "Foo") should be (List("Foo", "Foo"))
+    }
+
+
+    it( """should show an empty list because we haven't covered that yet, this time with ::""") {
+      def mySecond[A](list:List[A]):Option[A] = {
+        list match {
+          case _ :: y :: _ => Some(y)
+          case _ => None
+        }
+      }
+      mySecond(List()) should be (None)
+      mySecond(List(1)) should be (None)
+      mySecond(List(1, 2)) should be (Some(2))
+      mySecond(List(1, 2, 3, 4, 5)) should be (Some(2))
+      mySecond(List("Foo", "Bar", "Baz")) should be (Some("Bar"))
     }
 
 
     it( """should show an empty list because we haven't covered that yet.""") {
-      pending
+        def mySecond[A](list:List[A]):Option[A] = {
+          list match {
+            case List(_, y, _*) => Some(y)
+            case _ => None
+          }
+        }
+        mySecond(List()) should be (None)
+        mySecond(List(1)) should be (None)
+        mySecond(List(1, 2)) should be (Some(2))
+        mySecond(List(1, 2, 3, 4, 5)) should be (Some(2))
+        mySecond(List("Foo", "Bar", "Baz")) should be (Some("Bar"))
     }
 
     it( """can also use an alternative pipe to match""") {
-      pending
+      def mySecond[A](list:List[A]):Option[A] = {
+        list match {
+          case List() | List(_) => None
+          case List(_, y, _*) => Some(y)
+        }
+      }
+      mySecond(List()) should be (None)
+      mySecond(List(1)) should be (None)
+      mySecond(List(1, 2)) should be (Some(2))
+      mySecond(List(1, 2, 3, 4, 5)) should be (Some(2))
+      mySecond(List("Foo", "Bar", "Baz")) should be (Some("Bar"))
     }
 
     it(
       """should have a None in a pattern match, though we have not covered it.  This is just one way
         |  to get the information from an Option[T]""".stripMargin) {
-      pending
+
+      def number2String(x:Int):String = {
+        val map = Map(1 -> "One", 2 -> "Two", 3 -> "Three", 4 -> "Four")
+        map.get(x) match {
+          case Some(a) => s"Number: $a"
+          case None => "Nope"
+        }
+      }
+
+      number2String(1) should be ("Number: One")
+      number2String(4) should be ("Number: Four")
+      number2String(3) should be ("Number: Three")
+      number2String(8) should be ("Nope")
     }
 
     it( """should be careful with only Some vs. Option""") {
-      pending
+      val answerToEverything:Option[Int] = Some(42)
+      val result = answerToEverything match {
+        case Some(x) => s"The number is $x"
+        case None => s"No Answer Available"
+      }
+
+      result should be("The number is 42")
     }
 
     it( """should also match just simple types like Int, String, etc.""") {
@@ -225,11 +312,18 @@ class AdvancedPatternMatchingSpec extends FunSpec with Matchers {
           case b: String => "String"
           case c: (_, _) => "Tuple 2"
           case d: (_, _, _) => "Tuple 3"
-          case e:
-            Number => "Another number"
+          case e: Number => "Another number"
         }
       }
       whatDoIHave_?("Hello") should be("String")
+    }
+
+    it ("""matching is used in exceptions""") {
+      try {
+        14/0
+      } catch {
+        case e: ArithmeticException => e.printStackTrace()
+      }
     }
 
     it( """of course order is always important in pattern matching, particularly with types""") {
@@ -252,7 +346,6 @@ class AdvancedPatternMatchingSpec extends FunSpec with Matchers {
         x match {
           case Stream.Empty => None // Shouldn't happen
           case _ #:: Stream.Empty => None //0!
-          case _ #:: snd #:: Stream.Empty => Some(snd) //1!
           case _ #:: snd #:: rest => Some(snd) //1#
         }
       }
@@ -323,7 +416,21 @@ class AdvancedPatternMatchingSpec extends FunSpec with Matchers {
 
   describe("A Regular Pattern Expression Match") {
     it("""uses .r after a String to Convert it to a Regex Type, from there groups can can be determined""".stripMargin) {
-      pending
+      case class PhoneNumber(ac:String, prefix:String, suffix:String)
+
+      def convertStringToPhoneNumber(s:String):Option[PhoneNumber] = {
+        val PhoneRegexPlain:Regex = """(\d{3})-(\d{4})""".r
+        val AreaPhoneRegexPlain:Regex = """(\d{3})-(\d{3})-(\d{4})""".r
+
+        s match {
+          case PhoneRegexPlain(pre, suf) => Some(PhoneNumber("", pre, suf))
+          case AreaPhoneRegexPlain(ac, pre, suf) => Some(PhoneNumber(ac, pre, suf))
+          case _ => None
+        }
+      }
+
+      convertStringToPhoneNumber("333-1230") should be (Some(PhoneNumber("", "333", "1230")))
+      convertStringToPhoneNumber("404-333-1230") should be (Some(PhoneNumber("404", "333", "1230")))
     }
   }
 
@@ -351,7 +458,7 @@ class AdvancedPatternMatchingSpec extends FunSpec with Matchers {
     }
 
     it( """can also be trimmed down inline with case statements compare the above with the following below""") {
-      val result = List(1, 2, 3, 4, 5, 6).map { case x: Int if x % 2 == 0 => x * 2; case y: Int if y % 2 != 0 => y * 3 }
+      val result = List(1, 2, 3, 4, 5, 6).map{ case x: Int if x % 2 == 0 => x * 2; case y: Int if y % 2 != 0 => y * 3 }
       result should be(List(3, 4, 9, 8, 15, 12))
     }
   }
@@ -375,18 +482,46 @@ class AdvancedPatternMatchingSpec extends FunSpec with Matchers {
 
   describe("Custom pattern matching with an instance") {
 
+    object Even {
+      def unapply(arg: Int): Option[Int] = if (arg % 2 == 0) Some(arg) else None
+    }
+
+    object Odd {
+      def unapply(arg: Int): Option[Int] = if (arg % 2 != 0) Some(arg) else None
+    }
 
     it(
       """can also extract from an instance just in case it is the instance that contains logic
         |  to extract information, this is the technique used to for regex grouping""".stripMargin) {
 
-      pending
+       val num = 40
+       val result = num match {
+         case Even(_) => "Even"
+         case Odd(_) => "Odd"
+       }
+       result should be ("Even")
     }
   }
 
   describe("Custom pattern matching with unapplySeq") {
     it("would require an unapplySeq for extracting collections") {
-      pending
+
+      object WordNumbers {
+        def unapplySeq(x:String):Option[Seq[String]] = {
+           val regex = """\d+""".r
+           val matches = regex.findAllIn(x)
+           if (matches.isEmpty) None else Some(matches.toSeq)
+        }
+      }
+
+      val result = "The score yesterday was 110 to 99" match {
+        case (WordNumbers()) => "No numbers in the word"
+        case (WordNumbers(x)) => s"One number: $x"
+        case (WordNumbers(x, y)) => s"Two numbers: $x, $y"
+        case (WordNumbers(x, y, z@_*)) => s"Two or more numbers: $x, $y, and the rest is $z"
+      }
+
+      result should be ("Two numbers: 110, 99")
     }
   }
 
