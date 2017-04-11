@@ -510,7 +510,8 @@ class AdvancedPatternMatchingSpec extends FunSpec with Matchers {
         def unapplySeq(x:String):Option[Seq[String]] = {
            val regex = """\d+""".r
            val matches = regex.findAllIn(x)
-           if (matches.isEmpty) None else Some(matches.toSeq)
+	   Some(matches.toSeq)
+//           if (matches.isEmpty) None else Some(matches.toSeq)
         }
       }
 
@@ -522,6 +523,15 @@ class AdvancedPatternMatchingSpec extends FunSpec with Matchers {
       }
 
       result should be ("Two numbers: 110, 99")
+
+      val otherResult = "There is no score" match {
+        case (WordNumbers()) => "No numbers in the word"
+        case (WordNumbers(x)) => s"One number: $x"
+        case (WordNumbers(x, y)) => s"Two numbers: $x, $y"
+        case (WordNumbers(x, y, z@_*)) => s"Two or more numbers: $x, $y, and the rest is $z"
+      }
+
+      otherResult should be ("No numbers in the word")
     }
   }
 
